@@ -28,7 +28,7 @@ settings = MemorySettings(
 async def main():
     async with MemoryClient(settings) as memory_client:
         # Create unified memory interface
-        session_id = "course-demo"
+        session_id = "movie-chat-session"
 
         memory = Neo4jMicrosoftMemory.from_memory_client(
             memory_client=memory_client,
@@ -44,12 +44,12 @@ async def main():
         client = OpenAIResponsesClient()
 
         agent = client.as_agent(
-            name="memory-agent",
+            name="movie-memory-agent",
             instructions=(
-                "You are a helpful assistant with persistent memory. "
-                "You can remember previous conversations and user "
-                "preferences. When you notice the user expressing "
-                "a preference, acknowledge it."
+                "You are a movie recommendation assistant with persistent "
+                "memory. You remember what users have told you about their "
+                "preferences, which movies you have discussed, and what "
+                "you recommended in past sessions."
             ),
             context_providers=[memory.context_provider],
         )
@@ -59,41 +59,29 @@ async def main():
 
         # tag::run[]
         queries = [
-            "Hi! I'm interested in learning about Apple's products.",
-            "What about their risk factors?",
-            "Can you remind me what we discussed about Apple?",
+            "I really enjoy sci-fi movies, especially ones about time travel.",
+            "What did I say my favorite genre was?",
+            "Can you recommend something I might like?",
         ]
 
         for query in queries:
-            print(f"User: {query}\n")
-            print("Answer: ", end="", flush=True)
+            print(f"\nUser: {query}")
             response = await agent.run(query, session=session)
-            print(response.text)
-            print("\n" + "-" * 50 + "\n")
+            print(f"Assistant: {response.text}")
         # end::run[]
 
         # tag::search[]
         results = await memory.search_memory(
-            query="Apple products and risks",
+            query="sci-fi movies",
             include_messages=True,
             include_entities=True,
             include_preferences=True,
             limit=5,
         )
 
-        print("=== Memory Search Results ===\n")
-
-        if results.get("messages"):
-            print(f"Messages found: {len(results['messages'])}")
-            for msg in results["messages"][:3]:
-                print(f"  [{msg['role']}] {msg['content'][:100]}...")
-            print()
-
-        if results.get("entities"):
-            print(f"Entities found: {len(results['entities'])}")
-            for entity in results["entities"][:5]:
-                print(f"  {entity['name']} ({entity['type']})")
-            print()
+        print("Messages:", results.get("messages", []))
+        print("Entities:", results.get("entities", []))
+        print("Preferences:", results.get("preferences", []))
         # end::search[]
 
 asyncio.run(main())
