@@ -8,19 +8,26 @@ link:https://codespaces.new/neo4j-graphacademy/genai-maf-context-providers[image
 
 == Tests
 
-To run the solution tests:
+To run the solution tests, you will need Python 3.12+.
 
 . Create a Neo4j instance with the appropriate dataset
 . Create a virtual environment and install the requirements.
 +
 [source,sh]
+----
+python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
+----
 . Install `pytest`
 +
 [source,sh]
+----
 pip install pytest
+----
 . Create a `.env` file in the root directory. Use `.env.example` as a template.
 . Run the tests
 +
 [source,sh]
+----
 pytest genai-maf-context-providers/solutions
+----

@@ -5,7 +5,8 @@ def test_simple_agent(test_helpers, monkeypatch):
         "simple_agent"
     )
 
-    assert output > ""
+    assert "User:" in output
+    assert "Answer:" in output
 
 def test_simple_context_provider(test_helpers, monkeypatch):
 
@@ -14,7 +15,10 @@ def test_simple_context_provider(test_helpers, monkeypatch):
         "simple_context_provider"
     )
 
-    assert output > ""
+    assert "User:" in output
+    assert "Answer:" in output
+    assert "Extracted Name:" in output
+    assert "Extracted Age:" in output
 
 def test_fulltext_context_provider(test_helpers, monkeypatch):
 
@@ -23,7 +27,8 @@ def test_fulltext_context_provider(test_helpers, monkeypatch):
         "fulltext_context_provider"
     )
 
-    assert output > ""
+    assert "User:" in output
+    assert "Answer:" in output
 
 def test_vector_context_provider(test_helpers, monkeypatch):
 
@@ -32,7 +37,8 @@ def test_vector_context_provider(test_helpers, monkeypatch):
         "vector_context_provider"
     )
 
-    assert output > ""
+    assert "User:" in output
+    assert "Answer:" in output
 
 def test_graph_enriched_provider(test_helpers, monkeypatch):
 
@@ -41,7 +47,8 @@ def test_graph_enriched_provider(test_helpers, monkeypatch):
         "graph_enriched_provider"
     )
 
-    assert output > ""
+    assert "User:" in output
+    assert "Answer:" in output
 
 def test_memory_context_provider(test_helpers, monkeypatch):
 
@@ -50,7 +57,11 @@ def test_memory_context_provider(test_helpers, monkeypatch):
         "memory_context_provider"
     )
 
-    assert output > ""
+    assert "User:" in output
+    assert "Assistant:" in output
+    assert "Messages:" in output
+    assert "Entities:" in output
+    assert "Preferences:" in output
 
 def test_memory_tools_agent(test_helpers, monkeypatch):
 
@@ -59,4 +70,5 @@ def test_memory_tools_agent(test_helpers, monkeypatch):
         "memory_tools_agent"
     )
 
-    assert output > ""
+    assert "User:" in output
+    assert "=== Stored Memories ===" in output
