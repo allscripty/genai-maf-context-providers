@@ -24,6 +24,16 @@ Run the test script to confirm your connections are working:
 python genai-maf-context-providers/test_environment.py
 ```
 
+## Load Embeddings and Create Indexes
+
+> **CRITICAL:** You must run the setup script before starting Labs 3+. It loads movie plot embeddings and creates the vector and fulltext indexes that the labs depend on. Without this step, you will get "index not found" errors.
+
+```bash
+python genai-maf-context-providers/setup.py
+```
+
+You should see `Setup complete!` when it finishes.
+
 ## Start the Labs
 
 The workshop labs are Jupyter notebooks in the `labs/` directory. Open `labs/lab-1-first-agent.ipynb` to get started.
