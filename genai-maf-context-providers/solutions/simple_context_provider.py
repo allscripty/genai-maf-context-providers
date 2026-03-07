@@ -1,5 +1,4 @@
 import asyncio
-import os
 from typing import Any
 
 from dotenv import load_dotenv
@@ -37,8 +36,7 @@ class UserInfoMemory(BaseContextProvider):
         state: dict[str, Any],
     ) -> None:
         """Inject dynamic instructions based on stored user info."""
-        my_state = state.setdefault(self.source_id, {})
-        user_info = my_state.setdefault("user_info", UserInfo())
+        user_info = state.setdefault("user_info", UserInfo())
 
         instructions: list[str] = []
 
@@ -69,8 +67,7 @@ class UserInfoMemory(BaseContextProvider):
         state: dict[str, Any],
     ) -> None:
         """Extract user info from the conversation after each turn."""
-        my_state = state.setdefault(self.source_id, {})
-        user_info = my_state.setdefault("user_info", UserInfo())
+        user_info = state.setdefault("user_info", UserInfo())
         if user_info.name is not None and user_info.age is not None:
             return
 
@@ -98,7 +95,7 @@ class UserInfoMemory(BaseContextProvider):
                 user_info.name = extracted.name
             if extracted and user_info.age is None and extracted.age:
                 user_info.age = extracted.age
-            state.setdefault(self.source_id, {})["user_info"] = user_info
+            state["user_info"] = user_info
         except Exception:
             pass
 # end::provider[]
