@@ -101,7 +101,10 @@ async def tool_stats_example(memory_client):
 # end::tool_stats[]
 
 async def main():
-    async with MemoryClient(settings) as memory_client:
+    memory_client = MemoryClient(settings)
+    await memory_client.connect()
+
+    try:
         memory = Neo4jMicrosoftMemory.from_memory_client(
             memory_client=memory_client,
             session_id="reasoning-demo",
@@ -115,5 +118,7 @@ async def main():
 
         await find_similar_example(memory)
         await tool_stats_example(memory_client)
+    finally:
+        await memory_client.close()
 
 asyncio.run(main())

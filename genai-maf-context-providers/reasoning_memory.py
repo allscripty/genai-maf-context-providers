@@ -19,6 +19,10 @@ settings = MemorySettings(
     },
 )
 
+# TODO: Create a MemoryClient, connect with await memory_client.connect()
+
+# TODO: Create Neo4jMicrosoftMemory from the memory client
+
 # TODO: Use record_agent_trace() to record an agent execution trace
 # Include: task description, tool_calls list, outcome, and success flag
 
@@ -28,3 +32,5 @@ settings = MemorySettings(
 # TODO: Use get_similar_traces() to find similar past tasks
 
 # TODO: Use memory_client.reasoning.get_tool_stats() to view tool statistics
+
+# TODO: Close the connection with await memory_client.close()

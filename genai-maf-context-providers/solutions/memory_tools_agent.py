@@ -27,7 +27,10 @@ settings = MemorySettings(
 
 # tag::tools[]
 async def main():
-    async with MemoryClient(settings) as memory_client:
+    memory_client = MemoryClient(settings)
+    await memory_client.connect()
+
+    try:
         # Create unified memory interface
         memory = Neo4jMicrosoftMemory.from_memory_client(
             memory_client=memory_client,
@@ -106,5 +109,7 @@ async def main():
         if results.get("messages"):
             print(f"Messages stored: {len(results['messages'])}")
         # end::verify[]
+    finally:
+        await memory_client.close()
 
 asyncio.run(main())

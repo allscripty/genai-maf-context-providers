@@ -14,6 +14,7 @@ from neo4j_agent_memory.integrations.microsoft_agent import (
 )
 
 # TODO: Configure MemorySettings and create MemoryClient
+# Use await memory_client.connect() to connect
 
 # TODO: Create Neo4jMicrosoftMemory
 
@@ -22,3 +23,5 @@ from neo4j_agent_memory.integrations.microsoft_agent import (
 # TODO: Create an agent with both tools and context_providers
 
 # TODO: Run conversations that test preference saving and recall
+
+# TODO: Close the connection with await memory_client.close()
