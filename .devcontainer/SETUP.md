@@ -27,3 +27,13 @@ python genai-maf-context-providers/test_environment.py
 ## Start the Labs
 
 The workshop labs are Jupyter notebooks in the `labs/` directory. Open `labs/lab-1-first-agent.ipynb` to get started.
+
+### Running the Notebooks
+
+When you open a notebook, you need to select a Python kernel:
+
+1. In the top right corner, click **Select Kernel**
+2. Choose **Python Environments**
+3. Select **Python 3.12.11**
+
+You are now ready to run cells in the notebook.
