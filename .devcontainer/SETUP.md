@@ -4,30 +4,19 @@ This repository accompanies the [Neo4j Context Providers for Microsoft Agent Fra
 
 All required software and packages have been installed automatically.
 
-## 1. Create a Neo4j Sandbox
+## Check Your .env
 
-1. Go to [sandbox.neo4j.com](https://sandbox.neo4j.com)
-2. Sign in or create a free account
-3. Select the **Recommendations** dataset and create a new sandbox
-4. Note the **Connection details** (Bolt URL, username, password)
+If you entered your credentials as Codespaces secrets when launching, your `.env` file has been generated automatically.
 
-## 2. Configure Environment Variables
-
-1. Create a new `.env` file by copying the example:
+If not, create one manually:
 
 ```bash
 cp .env.example .env
 ```
 
-2. Open `.env` and update with your credentials:
-   - `OPENAI_API_KEY` — Your OpenAI API key from [platform.openai.com](https://platform.openai.com), or use the key provided by your instructor
-   - `NEO4J_URI` — The Bolt URI from your Neo4j Sandbox (e.g. `neo4j+s://xxxxx.databases.neo4j.io`)
-   - `NEO4J_USERNAME` — Usually `neo4j`
-   - `NEO4J_PASSWORD` — The password from your Neo4j Sandbox
+Then update it with your Neo4j Sandbox and OpenAI credentials.
 
-> **Tip:** If you configured secrets when launching the Codespace, those values are already available as environment variables. You still need to create the `.env` file for scripts that use `python-dotenv`.
-
-## 3. Verify Your Setup
+## Verify Your Setup
 
 Run the test script to confirm your connections are working:
 
@@ -35,6 +24,6 @@ Run the test script to confirm your connections are working:
 python genai-maf-context-providers/test_environment.py
 ```
 
-## 4. Start the Labs
+## Start the Labs
 
 The workshop labs are Jupyter notebooks in the `labs/` directory. Open `labs/lab-1-first-agent.ipynb` to get started.
