@@ -1,33 +1,60 @@
 = Neo4j Context Providers for Microsoft Agent Framework
 
-This repository accompanies the link:https://graphacademy.neo4j.com/courses/genai-maf-context-providers/[Neo4j Context Providers for Microsoft Agent Framework course^] on link:https://graphacademy.neo4j.com[GraphAcademy^].
+This repository accompanies the link:https://graphacademy.neo4j.com/courses/genai-maf-context-providers/[Neo4j Context Providers for Microsoft Agent Framework workshop^] on link:https://graphacademy.neo4j.com[GraphAcademy^].
 
-For a complete walkthrough of this repository, https://graphacademy.neo4j.com/courses/genai-maf-context-providers/[enrol now^].
+== Getting Started
+
+The fastest way to get started is with GitHub Codespaces, which provides a pre-configured development environment with all dependencies installed.
 
 link:https://codespaces.new/neo4j-graphacademy/genai-maf-context-providers[image:https://github.com/codespaces/badge.svg[Open in GitHub Codespaces]^]
 
-== Tests
+=== What happens when you launch
 
-To run the solution tests, you will need Python 3.12+.
+. A cloud-based development environment starts with Python 3.12
+. All required packages are installed automatically (`agent-framework`, `openai`, `neo4j-graphrag`, Jupyter, etc.)
+. Setup instructions open in the editor
 
-. Create a Neo4j instance with the appropriate dataset
-. Create a virtual environment and install the requirements.
+=== After launching
+
+. **Create a Neo4j Sandbox** — Go to link:https://sandbox.neo4j.com[sandbox.neo4j.com^], sign in, and create a new instance with the **Recommendations** dataset
+. **Configure credentials** — Copy `.env.example` to `.env` and fill in your Neo4j and OpenAI credentials (use your own OpenAI key or the one provided by your instructor)
+. **Verify setup** — Run `python genai-maf-context-providers/test_environment.py`
+. **Start the labs** — Open `labs/lab-1-first-agent.ipynb` and follow along
+
+== Workshop Labs
+
+The `labs/` directory contains Jupyter notebooks for each hands-on exercise:
+
+* `lab-1-first-agent.ipynb` — Create your first agent with tools
+
+== Running Locally
+
+If you prefer to run locally instead of using Codespaces:
+
+. Clone the repository
++
+[source,sh]
+----
+git clone https://github.com/neo4j-graphacademy/genai-maf-context-providers.git
+cd genai-maf-context-providers
+----
+. Create a virtual environment and install the requirements
 +
 [source,sh]
 ----
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 ----
-. Install `pytest`
-+
+. Create a `.env` file from `.env.example` and fill in your credentials
+. Run `python genai-maf-context-providers/test_environment.py` to verify setup
+. Open the notebooks in `labs/` with Jupyter or VS Code
+
+== Tests
+
+To run the solution tests:
+
 [source,sh]
 ----
 pip install pytest
-----
-. Create a `.env` file in the root directory. Use `.env.example` as a template.
-. Run the tests
-+
-[source,sh]
-----
 pytest genai-maf-context-providers/solutions
 ----

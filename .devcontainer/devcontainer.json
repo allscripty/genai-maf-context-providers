@@ -20,8 +20,23 @@
       "extensions": [
         "ms-python.python",
         "ms-python.debugpy",
+        "ms-toolsai.jupyter",
         "neo4j-extensions.neo4j-for-vscode"
       ]
+    }
+  },
+  "secrets": {
+    "OPENAI_API_KEY": {
+      "description": "OpenAI API key for LLM access (from platform.openai.com or provided by instructor)"
+    },
+    "NEO4J_URI": {
+      "description": "Neo4j Sandbox Bolt URI (e.g. neo4j+s://xxxxx.databases.neo4j.io)"
+    },
+    "NEO4J_USERNAME": {
+      "description": "Neo4j username (default: neo4j)"
+    },
+    "NEO4J_PASSWORD": {
+      "description": "Neo4j Sandbox password"
     }
   }
 }
