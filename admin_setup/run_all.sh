@@ -1,8 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-DIR="$(cd "$(dirname "$0")" && pwd)"
-SOLUTIONS_DIR="$DIR/genai-maf-context-providers/solutions"
+REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+SOLUTIONS_DIR="$REPO_DIR/genai-maf-context-providers/solutions"
+PYTHON="$REPO_DIR/.venv/bin/python"
+
+if [ ! -f "$PYTHON" ]; then
+  echo "ERROR: Virtual environment not found at $REPO_DIR/.venv"
+  echo "Run: python -m venv .venv && .venv/bin/pip install -r requirements.txt"
+  exit 1
+fi
 
 passed=0
 failed=0
@@ -33,7 +40,7 @@ for entry in "${scripts[@]}"; do
   echo "========================================"
   echo ""
 
-  if python "$SOLUTIONS_DIR/$script"; then
+  if "$PYTHON" "$SOLUTIONS_DIR/$script"; then
     echo ""
     echo "-- PASSED --"
     ((passed++))

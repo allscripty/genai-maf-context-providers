@@ -47,14 +47,32 @@ pip install -r requirements.txt
 ----
 . Create a `.env` file from `.env.example` and fill in your credentials
 . Run `python genai-maf-context-providers/test_environment.py` to verify setup
+. Run the setup script to load embeddings and create indexes (required for Labs 3+):
++
+[source,sh]
+----
+python genai-maf-context-providers/setup.py
+----
 . Open the notebooks in `labs/` with Jupyter or VS Code
 
-== Tests
+== Admin Setup
 
-To run the solution tests:
+The `admin_setup/` directory contains scripts for course maintainers:
+
+=== run_all.sh
+
+Runs all solution scripts end-to-end to verify they work against the configured Neo4j instance. Requires a `.env` with valid credentials and the `.venv` virtual environment.
 
 [source,sh]
 ----
-pip install pytest
-pytest genai-maf-context-providers/solutions
+bash admin_setup/run_all.sh
+----
+
+=== generate_embeddings.py
+
+One-time script used to generate `genai-maf-context-providers/data/movie_embeddings.csv`. Students do **not** need to run this — the pre-computed embeddings are included in the repo. Instead, students run `setup.py` to load them into Neo4j.
+
+[source,sh]
+----
+.venv/bin/python admin_setup/generate_embeddings.py
 ----
