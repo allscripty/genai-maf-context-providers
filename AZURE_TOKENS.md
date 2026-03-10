@@ -38,18 +38,20 @@ Azure OpenAI **Global Standard** pricing is identical to OpenAI direct pricing. 
 
 ### Cost Per Participant (Global Standard)
 
+Token counts vary ±20% between runs due to non-deterministic LLM responses (see [TOKENS.md](TOKENS.md#run-to-run-variance)). The estimates below use the higher of two measured runs (~38,000 tokens/participant).
+
 | Model | Input ($/1M) | Output ($/1M) | Embedding ($/1M) | Cost Per Participant |
 |---|---:|---:|---:|---:|
-| GPT-5 Mini (Azure) | $0.25 | $2.00 | $0.10 | **~$0.027** |
+| GPT-5 Mini (Azure) | $0.25 | $2.00 | $0.10 | **~$0.031** |
 
 ### Workshop Cost by Participant Count (Global Standard)
 
 | Participants | GPT-5 Mini |
 |---:|---:|
-| 10 | $0.27 |
-| 25 | $0.68 |
-| 50 | $1.35 |
-| 100 | $2.70 |
+| 10 | $0.31 |
+| 25 | $0.78 |
+| 50 | $1.55 |
+| 100 | $3.10 |
 
 ### Data Zone Premium (~10%)
 
@@ -57,7 +59,7 @@ For workshops requiring EU or US data residency, use Data Zone deployments. The 
 
 | Participants | GPT-5 Mini (Data Zone) |
 |---:|---:|
-| 100 | $2.97 |
+| 100 | $3.41 |
 
 ### Cached Input Pricing
 
@@ -78,10 +80,10 @@ The Bicep template deploys with `capacity=120` which maps to approximately:
 
 **Yes, comfortably.** Here's why:
 
-- Total tokens per participant: ~35,669
-- At 100 participants running all 11 solutions: ~3.57M tokens total
+- Total tokens per participant: ~38,000 (conservative upper bound across multiple runs)
+- At 100 participants running all 11 solutions: ~3.8M tokens total
 - Workshop duration: ~2 hours (participants work through labs at different paces)
-- Average token rate: ~3.57M / 120 min = ~29,750 TPM — well under the 120K TPM limit
+- Average token rate: ~3.8M / 120 min = ~31,667 TPM — well under the 120K TPM limit
 - Peak concurrent requests: even if 20 participants hit the API simultaneously, that's 20 RPM — well under 720 RPM
 
 **Burst handling:** Azure enforces rate limits in 1-second and 10-second windows. With 720 RPM, you can sustain 12 requests/second. Even during peak moments (e.g., all participants starting a lab at once), this provides ample headroom.

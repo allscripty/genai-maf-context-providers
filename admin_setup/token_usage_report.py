@@ -12,11 +12,13 @@ Usage:
     python admin_setup/token_usage_report.py
     python admin_setup/token_usage_report.py --model gpt-5-nano
     python admin_setup/token_usage_report.py --model gpt-5-mini --json
+    python admin_setup/token_usage_report.py --model gpt-5-mini --log logs/mini-run
     python admin_setup/token_usage_report.py --provider azure --model gpt-5-mini
     python admin_setup/token_usage_report.py --provider azure --model gpt-5-nano --json
 """
 
 import importlib
+import io
 import json
 import os
 import sys
@@ -166,6 +168,26 @@ def _install_embeddings_hook():
 
 
 # ---------------------------------------------------------------------------
+# Tee writer for --log support
+# ---------------------------------------------------------------------------
+
+
+class _TeeWriter:
+    """Write to multiple streams simultaneously."""
+
+    def __init__(self, *streams):
+        self.streams = streams
+
+    def write(self, data):
+        for s in self.streams:
+            s.write(data)
+
+    def flush(self):
+        for s in self.streams:
+            s.flush()
+
+
+# ---------------------------------------------------------------------------
 # Solution runner
 # ---------------------------------------------------------------------------
 
@@ -184,7 +206,12 @@ SOLUTIONS = [
 ]
 
 
-def run_solution(script_name: str, description: str, solutions_dir: Path) -> SolutionUsage:
+def run_solution(
+    script_name: str,
+    description: str,
+    solutions_dir: Path,
+    log_dir: Path | None = None,
+) -> SolutionUsage:
     """Run a single solution and capture its token usage."""
     global _current_calls
     _current_calls = []
@@ -197,11 +224,16 @@ def run_solution(script_name: str, description: str, solutions_dir: Path) -> Sol
     print(f"  {script_name}", file=sys.stderr)
     print(f"{'=' * 60}\n", file=sys.stderr)
 
+    log_buf = io.StringIO() if log_dir else None
+
     start = time.time()
     # Redirect stdout → stderr so solution print() output doesn't
     # pollute the JSON or report on stdout.
     saved_stdout = sys.stdout
-    sys.stdout = sys.stderr
+    if log_buf:
+        sys.stdout = _TeeWriter(sys.stderr, log_buf)
+    else:
+        sys.stdout = sys.stderr
     try:
         spec = importlib.util.spec_from_file_location(
             script_name.replace(".py", ""), script_path
@@ -211,11 +243,17 @@ def run_solution(script_name: str, description: str, solutions_dir: Path) -> Sol
     except Exception as e:
         usage.error = str(e)
         print(f"  ERROR: {e}", file=sys.stderr)
+        if log_buf:
+            log_buf.write(f"  ERROR: {e}\n")
     finally:
         sys.stdout = saved_stdout
         usage.duration_s = time.time() - start
         usage.calls = list(_current_calls)
         _current_calls = []
+
+    if log_dir and log_buf:
+        log_path = log_dir / f"{script_name.replace('.py', '')}.log"
+        log_path.write_text(log_buf.getvalue())
 
     return usage
 
@@ -425,6 +463,11 @@ def main():
         choices=["openai", "azure"],
         help="Override LLM_PROVIDER (openai or azure)",
     )
+    parser.add_argument(
+        "--log",
+        metavar="DIR",
+        help="Write per-solution logs and report to DIR",
+    )
     args = parser.parse_args()
 
     repo_dir = Path(__file__).resolve().parent.parent
@@ -472,16 +515,42 @@ def main():
 
         dotenv.load_dotenv = _load_dotenv_preserving_overrides
 
+    # Set up log directory if requested.
+    log_dir = None
+    if args.log:
+        log_dir = Path(args.log)
+        log_dir.mkdir(parents=True, exist_ok=True)
+        print(f"Logging solution output to: {log_dir}", file=sys.stderr)
+
     # Install hooks before importing any solution code.
     _install_chat_response_hook()
     _install_embeddings_hook()
 
     results = []
     for script_name, description in SOLUTIONS:
-        usage = run_solution(script_name, description, solutions_dir)
+        usage = run_solution(script_name, description, solutions_dir, log_dir=log_dir)
         results.append(usage)
 
-    print_report(results, output_json=args.json)
+    # Print report to stdout (and optionally to a log file).
+    if log_dir and not args.json:
+        report_buf = io.StringIO()
+        saved_stdout = sys.stdout
+        sys.stdout = _TeeWriter(saved_stdout, report_buf)
+        print_report(results, output_json=False)
+        sys.stdout = saved_stdout
+        (log_dir / "report.txt").write_text(report_buf.getvalue())
+        print(f"\nReport and logs written to: {log_dir}/", file=sys.stderr)
+    else:
+        print_report(results, output_json=args.json)
+        if log_dir:
+            # JSON mode: also write report.json to log dir
+            json_buf = io.StringIO()
+            saved_stdout = sys.stdout
+            sys.stdout = json_buf
+            print_report(results, output_json=True)
+            sys.stdout = saved_stdout
+            (log_dir / "report.json").write_text(json_buf.getvalue())
+            print(f"\nLogs written to: {log_dir}/", file=sys.stderr)
 
 
 if __name__ == "__main__":
