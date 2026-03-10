@@ -3,7 +3,7 @@ import asyncio
 from dotenv import load_dotenv
 load_dotenv(override=True)
 
-from agent_framework.openai import OpenAIResponsesClient
+from llm_provider import get_client
 from agent_framework_neo4j import Neo4jContextProvider, Neo4jSettings
 
 # tag::settings[]
@@ -31,7 +31,7 @@ provider = Neo4jContextProvider(
 # tag::agent[]
 async def main():
     async with provider:
-        client = OpenAIResponsesClient()
+        client = get_client()
 
         agent = client.as_agent(
             name="fulltext-agent",

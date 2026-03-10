@@ -3,9 +3,8 @@ import asyncio
 from dotenv import load_dotenv
 load_dotenv(override=True)
 
-from agent_framework.openai import OpenAIResponsesClient
+from llm_provider import get_client, get_embedder
 from agent_framework_neo4j import Neo4jContextProvider, Neo4jSettings
-from neo4j_graphrag.embeddings.openai import OpenAIEmbeddings
 
 # tag::settings[]
 # Load settings from environment variables
@@ -14,7 +13,7 @@ neo4j_settings = Neo4jSettings()
 
 # tag::embedder[]
 # Create embedder for converting queries to vectors
-embedder = OpenAIEmbeddings(model="text-embedding-ada-002")
+embedder = get_embedder()
 # end::embedder[]
 
 # tag::provider[]
@@ -39,7 +38,7 @@ provider = Neo4jContextProvider(
 # tag::agent[]
 async def main():
     async with provider:
-        client = OpenAIResponsesClient()
+        client = get_client()
 
         agent = client.as_agent(
             name="movie-hybrid-agent",

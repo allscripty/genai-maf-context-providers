@@ -3,9 +3,8 @@ import asyncio
 from dotenv import load_dotenv
 load_dotenv(override=True)
 
-from agent_framework.openai import OpenAIResponsesClient
+from llm_provider import get_client, get_embedder
 from agent_framework_neo4j import Neo4jContextProvider, Neo4jSettings
-from neo4j_graphrag.embeddings.openai import OpenAIEmbeddings
 
 # Load settings from environment
 neo4j_settings = Neo4jSettings()

@@ -3,7 +3,7 @@ import asyncio
 from dotenv import load_dotenv
 load_dotenv(override=True)
 
-from agent_framework.openai import OpenAIResponsesClient
+from llm_provider import get_client
 from agent_framework_neo4j import Neo4jContextProvider, Neo4jSettings
 
 # Load Neo4j settings from environment

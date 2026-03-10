@@ -4,7 +4,7 @@ from typing import Annotated
 from dotenv import load_dotenv
 load_dotenv(override=True)
 
-from agent_framework.openai import OpenAIResponsesClient
+from llm_provider import get_client
 from pydantic import Field
 
 # tag::movies[]
@@ -67,7 +67,7 @@ def get_movie_info(
 
 # tag::agent[]
 async def main():
-    client = OpenAIResponsesClient()
+    client = get_client()
 
     agent = client.as_agent(
         name="movie-info-agent",

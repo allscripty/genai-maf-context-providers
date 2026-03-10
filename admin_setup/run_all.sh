@@ -4,11 +4,20 @@ set -euo pipefail
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 SOLUTIONS_DIR="$REPO_DIR/genai-maf-context-providers/solutions"
 PYTHON="$REPO_DIR/.venv/bin/python"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 if [ ! -f "$PYTHON" ]; then
   echo "ERROR: Virtual environment not found at $REPO_DIR/.venv"
   echo "Run: python -m venv .venv && .venv/bin/pip install -r requirements.txt"
   exit 1
+fi
+
+# Token usage report mode: run_all.sh --tokens [--model MODEL] [--provider openai|azure] [--json]
+if [[ "${1:-}" == "--tokens" ]]; then
+  echo "Running token usage report..."
+  shift
+  "$PYTHON" "$SCRIPT_DIR/token_usage_report.py" "$@"
+  exit $?
 fi
 
 passed=0

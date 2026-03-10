@@ -8,7 +8,7 @@ if [ -n "$OPENAI_API_KEY" ] || [ -n "$NEO4J_URI" ]; then
   echo "Generating .env from Codespaces secrets..."
   cat > "$ENV_FILE" <<EOF
 OPENAI_API_KEY="${OPENAI_API_KEY:-sk-}"
-OPENAI_RESPONSES_MODEL_ID="gpt-4o"
+OPENAI_RESPONSES_MODEL_ID="gpt-5-nano"
 NEO4J_URI="${NEO4J_URI:-neo4j+s://}"
 NEO4J_USERNAME="${NEO4J_USERNAME:-neo4j}"
 NEO4J_PASSWORD="${NEO4J_PASSWORD:-}"

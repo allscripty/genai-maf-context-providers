@@ -4,7 +4,7 @@ from typing import Annotated
 from dotenv import load_dotenv
 load_dotenv(override=True)
 
-from agent_framework.openai import OpenAIResponsesClient
+from llm_provider import get_client
 from pydantic import Field
 
 # Hardcoded movie data from the Neo4j recommendations dataset
@@ -65,7 +65,7 @@ def get_movie_info(
 
 
 async def main():
-    client = OpenAIResponsesClient()
+    client = get_client()
 
     # TODO: Create the agent using client.as_agent()
     # Pass in a name, instructions, and the get_movie_info tool

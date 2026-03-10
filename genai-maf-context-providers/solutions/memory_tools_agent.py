@@ -6,7 +6,7 @@ load_dotenv(override=True)
 
 from pydantic import SecretStr
 
-from agent_framework.openai import OpenAIResponsesClient
+from llm_provider import get_client
 
 from neo4j_agent_memory import MemoryClient, MemorySettings
 from neo4j_agent_memory.integrations.microsoft_agent import (
@@ -48,7 +48,7 @@ async def main():
         # end::tools[]
 
         # tag::agent[]
-        client = OpenAIResponsesClient()
+        client = get_client()
 
         agent = client.as_agent(
             name="movie-assistant",

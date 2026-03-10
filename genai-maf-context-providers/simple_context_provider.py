@@ -10,7 +10,7 @@ from agent_framework import (
     SessionContext,
     SupportsChatGetResponse,
 )
-from agent_framework.openai import OpenAIResponsesClient
+from llm_provider import get_client
 from pydantic import BaseModel
 
 # Define a data model for structured extraction
@@ -27,7 +27,7 @@ class UserInfo(BaseModel):
 
 
 async def main():
-    client = OpenAIResponsesClient()
+    client = get_client()
 
     # TODO: Create the agent with the UserInfoMemory context provider
 

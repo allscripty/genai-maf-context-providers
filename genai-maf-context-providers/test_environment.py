@@ -23,11 +23,16 @@ class TestEnvironment(unittest.TestCase):
             os.getenv(variable_name),
             f"{variable_name} not found in .env file")
 
-    def test_openai_variables(self):
+    def test_llm_variables(self):
         if TestEnvironment.skip_env_variable_tests:
-            self.skipTest("Skipping OpenAI env variable test")
+            self.skipTest("Skipping LLM env variable test")
 
-        self.env_variable_exists('OPENAI_API_KEY')
+        provider = os.getenv('LLM_PROVIDER', 'openai').lower()
+        if provider == 'azure':
+            self.env_variable_exists('AZURE_OPENAI_API_KEY')
+            self.env_variable_exists('AZURE_OPENAI_ENDPOINT')
+        else:
+            self.env_variable_exists('OPENAI_API_KEY')
         TestEnvironment.skip_openai_test = False
 
     def test_neo4j_variables(self):
@@ -39,21 +44,40 @@ class TestEnvironment(unittest.TestCase):
         self.env_variable_exists('NEO4J_PASSWORD')
         TestEnvironment.skip_neo4j_test = False
 
-    def test_openai_connection(self):
+    def test_llm_connection(self):
         if TestEnvironment.skip_openai_test:
-            self.skipTest("Skipping OpenAI test")
+            self.skipTest("Skipping LLM connection test")
 
-        from openai import OpenAI, AuthenticationError
+        provider = os.getenv('LLM_PROVIDER', 'openai').lower()
 
-        llm = OpenAI()
+        if provider == 'azure':
+            from openai import AzureOpenAI, AuthenticationError
 
-        try:
-            models = llm.models.list()
-        except AuthenticationError as e:
-            models = None
-        self.assertIsNotNone(
-            models,
-            "OpenAI connection failed. Check the OPENAI_API_KEY key in .env file.")
+            llm = AzureOpenAI(
+                api_key=os.getenv('AZURE_OPENAI_API_KEY'),
+                azure_endpoint=os.getenv('AZURE_OPENAI_ENDPOINT'),
+                api_version=os.getenv('AZURE_OPENAI_API_VERSION', '2025-03-01-preview'),
+            )
+
+            try:
+                models = llm.models.list()
+            except AuthenticationError:
+                models = None
+            self.assertIsNotNone(
+                models,
+                "Azure OpenAI connection failed. Check AZURE_OPENAI_API_KEY and AZURE_OPENAI_ENDPOINT in .env file.")
+        else:
+            from openai import OpenAI, AuthenticationError
+
+            llm = OpenAI()
+
+            try:
+                models = llm.models.list()
+            except AuthenticationError:
+                models = None
+            self.assertIsNotNone(
+                models,
+                "OpenAI connection failed. Check the OPENAI_API_KEY key in .env file.")
 
     def test_neo4j_connection(self):
 
@@ -92,9 +116,9 @@ class TestEnvironment(unittest.TestCase):
 def suite():
     suite = unittest.TestSuite()
     suite.addTest(TestEnvironment('test_env_file_exists'))
-    suite.addTest(TestEnvironment('test_openai_variables'))
+    suite.addTest(TestEnvironment('test_llm_variables'))
     suite.addTest(TestEnvironment('test_neo4j_variables'))
-    suite.addTest(TestEnvironment('test_openai_connection'))
+    suite.addTest(TestEnvironment('test_llm_connection'))
     suite.addTest(TestEnvironment('test_neo4j_connection'))
     return suite
 

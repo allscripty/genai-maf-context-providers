@@ -17,7 +17,7 @@ link:https://codespaces.new/neo4j-partners/genai-maf-context-providers[image:htt
 === After launching
 
 . **Create a Neo4j Sandbox** — Go to link:https://sandbox.neo4j.com[sandbox.neo4j.com^], sign in, and create a new instance with the **Recommendations** dataset
-. **Configure credentials** — Copy `.env.example` to `.env` and fill in your Neo4j and OpenAI credentials (use your own OpenAI key or the one provided by your instructor)
+. **Configure credentials** — Copy `.env.example` to `.env` and fill in your Neo4j credentials and either your OpenAI API key or the Azure credentials provided by your instructor (see <<Using Azure AI Foundry>>)
 . **Verify setup** — Run `python genai-maf-context-providers/test_environment.py`
 . **Start the labs** — Open `labs/lab-1-first-agent.ipynb` and follow along
 
@@ -55,6 +55,129 @@ python genai-maf-context-providers/setup.py
 ----
 . Open the notebooks in `labs/` with Jupyter or VS Code
 
+=== Choosing a Model
+
+The environment variable for selecting a model depends on your provider.
+
+**OpenAI direct** — set `OPENAI_RESPONSES_MODEL_ID` in `.env`:
+
+[source,sh]
+----
+# Recommended for workshops — best balance of cost and response quality
+OPENAI_RESPONSES_MODEL_ID=gpt-5-mini
+
+# Cheapest and fastest — suitable for quick iteration
+OPENAI_RESPONSES_MODEL_ID=gpt-5-nano
+
+# Higher capability, higher cost
+OPENAI_RESPONSES_MODEL_ID=gpt-4o
+----
+
+**Azure AI Foundry** — set `AZURE_OPENAI_RESPONSES_DEPLOYMENT_NAME` in `.env`:
+
+[source,sh]
+----
+# Recommended for workshops — best balance of cost and response quality
+AZURE_OPENAI_RESPONSES_DEPLOYMENT_NAME=gpt-5-mini
+
+# Cheapest and fastest — suitable for quick iteration
+AZURE_OPENAI_RESPONSES_DEPLOYMENT_NAME=gpt-5-nano
+----
+
+All solutions have been tested against `gpt-5-nano`, `gpt-5-mini`, and `gpt-4o`. We recommend **`gpt-5-mini`** for workshops — it provides better response quality for multi-turn tool-calling exercises at ~$1.20 per 100 participants. See link:TOKENS.md[TOKENS.md] for a detailed cost breakdown.
+
+To test a different model, change the variable in `.env` and re-run a solution:
+
+[source,sh]
+----
+python genai-maf-context-providers/solutions/simple_agent.py
+----
+
+== Using Azure AI Foundry
+
+Instead of individual OpenAI API keys, instructors can deploy a shared Azure AI Foundry resource and distribute a single API key to all participants. This provisions `gpt-5-nano`, `gpt-5-mini`, and `text-embedding-ada-002` deployments.
+
+=== Prerequisites
+
+* link:https://learn.microsoft.com/en-us/cli/azure/install-azure-cli[Azure CLI^] installed
+* link:https://learn.microsoft.com/en-us/azure/developer/azure-developer-cli/install-azd[Azure Developer CLI (`azd`)^] installed
+* An Azure subscription with access to Azure AI Services
+
+=== Deploy the infrastructure
+
+. Sign in to Azure and azd:
++
+[source,sh]
+----
+az login --use-device-code
+azd auth login --use-device-code
+----
+. Run the setup script to select a region and initialize the environment:
++
+[source,sh]
+----
+bash scripts/setup_azure.sh
+----
+. Deploy:
++
+[source,sh]
+----
+azd provision --no-prompt
+----
+
+=== Retrieve the API key
+
+After deployment, get the API key to share with participants:
+
+[source,sh]
+----
+az cognitiveservices account keys list \
+  --name $(azd env get-values | grep AZURE_AI_SERVICES_NAME | cut -d'=' -f2 | tr -d '"') \
+  --resource-group $(azd env get-values | grep AZURE_RESOURCE_GROUP | cut -d'=' -f2 | tr -d '"') \
+  --query 'key1' -o tsv
+----
+
+Get the endpoint:
+
+[source,sh]
+----
+azd env get-values | grep AZURE_AI_SERVICES_ENDPOINT
+----
+
+=== Participant setup
+
+Share the API key and endpoint with participants. Each participant adds these to their `.env` file:
+
+[source,sh]
+----
+LLM_PROVIDER="azure"
+AZURE_OPENAI_API_KEY="<key from instructor>"
+AZURE_OPENAI_ENDPOINT="<endpoint from instructor>"
+AZURE_OPENAI_RESPONSES_DEPLOYMENT_NAME="gpt-5-mini"
+AZURE_OPENAI_EMBEDDING_DEPLOYMENT_NAME="text-embedding-ada-002"
+AZURE_OPENAI_API_VERSION="2025-03-01-preview"
+----
+
+To use `gpt-5-nano` instead, change `AZURE_OPENAI_RESPONSES_DEPLOYMENT_NAME` to `gpt-5-nano`.
+
+=== Verify the connection
+
+[source,sh]
+----
+python genai-maf-context-providers/test_environment.py
+----
+
+The test suite detects the `LLM_PROVIDER` setting and validates the correct set of credentials.
+
+=== Tear down
+
+After the workshop, remove all Azure resources:
+
+[source,sh]
+----
+bash scripts/cleanup_azure.sh
+----
+
 == Admin Setup
 
 The `admin_setup/` directory contains scripts for course maintainers:
@@ -67,6 +190,23 @@ Runs all solution scripts end-to-end to verify they work against the configured 
 ----
 bash admin_setup/run_all.sh
 ----
+
+Use the `--tokens` flag to run a token usage report across all solutions:
+
+[source,sh]
+----
+# Report using the model from .env
+bash admin_setup/run_all.sh --tokens
+
+# Report for a specific model
+bash admin_setup/run_all.sh --tokens --model gpt-5-nano
+bash admin_setup/run_all.sh --tokens --model gpt-5-mini
+
+# JSON output
+bash admin_setup/run_all.sh --tokens --model gpt-5-nano --json
+----
+
+See link:TOKENS.md[TOKENS.md] for the latest results.
 
 === generate_embeddings.py
 

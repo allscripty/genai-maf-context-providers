@@ -10,7 +10,7 @@ from agent_framework import (
     SessionContext,
     SupportsChatGetResponse,
 )
-from agent_framework.openai import OpenAIResponsesClient
+from llm_provider import get_client
 from pydantic import BaseModel
 
 # tag::model[]
@@ -102,7 +102,7 @@ class UserInfoMemory(BaseContextProvider):
 
 # tag::agent[]
 async def main():
-    client = OpenAIResponsesClient()
+    client = get_client()
 
     agent = client.as_agent(
         name="context-provider-agent",
