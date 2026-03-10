@@ -173,18 +173,32 @@ def _install_embeddings_hook():
 
 
 class _TeeWriter:
-    """Write to multiple streams simultaneously."""
+    """Write to multiple streams simultaneously.
 
-    def __init__(self, *streams):
-        self.streams = streams
+    Implements enough of the TextIO interface to serve as a drop-in
+    replacement for sys.stdout.  Attribute lookups (encoding, isatty, etc.)
+    are delegated to the primary (first) stream.
+    """
+
+    def __init__(self, primary, *others):
+        self._primary = primary
+        self._others = others
 
     def write(self, data):
-        for s in self.streams:
+        self._primary.write(data)
+        for s in self._others:
             s.write(data)
 
     def flush(self):
-        for s in self.streams:
+        self._primary.flush()
+        for s in self._others:
             s.flush()
+
+    def isatty(self):
+        return self._primary.isatty()
+
+    def __getattr__(self, name):
+        return getattr(self._primary, name)
 
 
 # ---------------------------------------------------------------------------
@@ -227,13 +241,14 @@ def run_solution(
     log_buf = io.StringIO() if log_dir else None
 
     start = time.time()
-    # Redirect stdout → stderr so solution print() output doesn't
-    # pollute the JSON or report on stdout.
+    # Redirect stdout so solution print() output doesn't pollute the
+    # JSON or report on stdout.  When logging, tee to both stderr
+    # (for live monitoring) and the log buffer.
     saved_stdout = sys.stdout
-    if log_buf:
-        sys.stdout = _TeeWriter(sys.stderr, log_buf)
-    else:
-        sys.stdout = sys.stderr
+    output_stream = (
+        _TeeWriter(sys.stderr, log_buf) if log_buf else sys.stderr
+    )
+    sys.stdout = output_stream
     try:
         spec = importlib.util.spec_from_file_location(
             script_name.replace(".py", ""), script_path
@@ -242,9 +257,8 @@ def run_solution(
         spec.loader.exec_module(module)
     except Exception as e:
         usage.error = str(e)
-        print(f"  ERROR: {e}", file=sys.stderr)
-        if log_buf:
-            log_buf.write(f"  ERROR: {e}\n")
+        # Flows through tee when logging, so log_buf gets it automatically.
+        print(f"  ERROR: {e}", file=output_stream)
     finally:
         sys.stdout = saved_stdout
         usage.duration_s = time.time() - start
@@ -276,8 +290,25 @@ def _get_report_provider() -> str:
     return os.environ.get("LLM_PROVIDER", "openai").lower()
 
 
-def print_report(results: list[SolutionUsage], output_json: bool = False):
-    """Print a formatted token usage report."""
+def print_report(
+    results: list[SolutionUsage],
+    output_json: bool = False,
+    file=None,
+):
+    """Print a formatted token usage report.
+
+    Args:
+        results: Token usage results for each solution.
+        output_json: Emit machine-readable JSON instead of text.
+        file: Output stream (defaults to sys.stdout).
+    """
+    if file is None:
+        file = sys.stdout
+
+    def _print(*args, **kwargs):
+        kwargs.setdefault("file", file)
+        print(*args, **kwargs)
+
     provider = _get_report_provider()
     model = _get_report_model()
 
@@ -306,7 +337,7 @@ def print_report(results: list[SolutionUsage], output_json: bool = False):
                     for c in r.calls
                 ],
             })
-        print(json.dumps({
+        _print(json.dumps({
             "provider": provider,
             "model": model,
             "solutions": data,
@@ -319,40 +350,40 @@ def print_report(results: list[SolutionUsage], output_json: bool = False):
         return
 
     # Header
-    print("\n" + "=" * 80)
-    print(f"  WORKSHOP TOKEN USAGE REPORT  ({provider}: {model})")
-    print("=" * 80)
+    _print("\n" + "=" * 80)
+    _print(f"  WORKSHOP TOKEN USAGE REPORT  ({provider}: {model})")
+    _print("=" * 80)
 
     # Per-solution breakdown
     for r in results:
         status = "FAILED" if r.error else "OK"
-        print(f"\n{'─' * 80}")
-        print(f"  {r.description}")
-        print(f"  {r.name}  [{status}]  ({r.duration_s:.1f}s)")
-        print(f"{'─' * 80}")
+        _print(f"\n{'─' * 80}")
+        _print(f"  {r.description}")
+        _print(f"  {r.name}  [{status}]  ({r.duration_s:.1f}s)")
+        _print(f"{'─' * 80}")
 
         if r.error:
-            print(f"  Error: {r.error}")
+            _print(f"  Error: {r.error}")
             continue
 
         if not r.calls:
-            print("  No OpenAI API calls detected")
+            _print("  No OpenAI API calls detected")
             continue
 
-        print(f"  {'Endpoint':<14} {'Model':<30} {'Input':>8} {'Output':>8} {'Total':>8}")
-        print(f"  {'─' * 68}")
+        _print(f"  {'Endpoint':<14} {'Model':<30} {'Input':>8} {'Output':>8} {'Total':>8}")
+        _print(f"  {'─' * 68}")
         for c in r.calls:
-            print(f"  {c.endpoint:<14} {c.model:<30} {c.input_tokens:>8,} {c.output_tokens:>8,} {c.total_tokens:>8,}")
+            _print(f"  {c.endpoint:<14} {c.model:<30} {c.input_tokens:>8,} {c.output_tokens:>8,} {c.total_tokens:>8,}")
 
-        print(f"  {'─' * 68}")
-        print(f"  {'SUBTOTAL':<14} {'':<30} {r.total_input:>8,} {r.total_output:>8,} {r.total_tokens:>8,}")
+        _print(f"  {'─' * 68}")
+        _print(f"  {'SUBTOTAL':<14} {'':<30} {r.total_input:>8,} {r.total_output:>8,} {r.total_tokens:>8,}")
 
     # Summary table
-    print(f"\n{'=' * 80}")
-    print("  SUMMARY")
-    print(f"{'=' * 80}")
-    print(f"\n  {'Solution':<40} {'API Calls':>10} {'Input':>10} {'Output':>10} {'Total':>10}")
-    print(f"  {'─' * 80}")
+    _print(f"\n{'=' * 80}")
+    _print("  SUMMARY")
+    _print(f"{'=' * 80}")
+    _print(f"\n  {'Solution':<40} {'API Calls':>10} {'Input':>10} {'Output':>10} {'Total':>10}")
+    _print(f"  {'─' * 80}")
 
     grand_input = 0
     grand_output = 0
@@ -361,21 +392,21 @@ def print_report(results: list[SolutionUsage], output_json: bool = False):
 
     for r in results:
         if r.error:
-            print(f"  {r.name:<40} {'FAILED':>10} {'':>10} {'':>10} {'':>10}")
+            _print(f"  {r.name:<40} {'FAILED':>10} {'':>10} {'':>10} {'':>10}")
             continue
-        print(f"  {r.name:<40} {r.num_api_calls:>10} {r.total_input:>10,} {r.total_output:>10,} {r.total_tokens:>10,}")
+        _print(f"  {r.name:<40} {r.num_api_calls:>10} {r.total_input:>10,} {r.total_output:>10,} {r.total_tokens:>10,}")
         grand_input += r.total_input
         grand_output += r.total_output
         grand_total += r.total_tokens
         grand_calls += r.num_api_calls
 
-    print(f"  {'─' * 80}")
-    print(f"  {'TOTAL PER PARTICIPANT':<40} {grand_calls:>10} {grand_input:>10,} {grand_output:>10,} {grand_total:>10,}")
+    _print(f"  {'─' * 80}")
+    _print(f"  {'TOTAL PER PARTICIPANT':<40} {grand_calls:>10} {grand_input:>10,} {grand_output:>10,} {grand_total:>10,}")
 
     # Cost estimates
-    print(f"\n{'=' * 80}")
-    print("  COST ESTIMATE (approximate)")
-    print(f"{'=' * 80}")
+    _print(f"\n{'=' * 80}")
+    _print("  COST ESTIMATE (approximate)")
+    _print(f"{'=' * 80}")
 
     chat_input = sum(r.chat_input for r in results if not r.error)
     chat_output = sum(r.chat_output for r in results if not r.error)
@@ -401,22 +432,22 @@ def print_report(results: list[SolutionUsage], output_json: bool = False):
 
     all_pricing = openai_pricing + azure_pricing
 
-    print(f"\n  Chat tokens:      {chat_input + chat_output:>10,}  (input: {chat_input:,}, output: {chat_output:,})")
-    print(f"  Embedding tokens: {embed_tokens:>10,}")
-    print(f"  Total tokens:     {grand_total:>10,}")
+    _print(f"\n  Chat tokens:      {chat_input + chat_output:>10,}  (input: {chat_input:,}, output: {chat_output:,})")
+    _print(f"  Embedding tokens: {embed_tokens:>10,}")
+    _print(f"  Total tokens:     {grand_total:>10,}")
 
-    print(f"\n  {'Model':<26} {'Input $/1M':>12} {'Output $/1M':>12} {'Cost/Participant':>18}")
-    print(f"  {'─' * 68}")
+    _print(f"\n  {'Model':<26} {'Input $/1M':>12} {'Output $/1M':>12} {'Cost/Participant':>18}")
+    _print(f"  {'─' * 68}")
     costs = {}
     for model_name, in_price, out_price, emb_price in all_pricing:
         cost = (chat_input * in_price + chat_output * out_price + embed_tokens * emb_price) / 1_000_000
         costs[model_name] = cost
-        print(f"  {model_name:<26} ${in_price:>10.2f} ${out_price:>10.2f} ${cost:>16.4f}")
+        _print(f"  {model_name:<26} ${in_price:>10.2f} ${out_price:>10.2f} ${cost:>16.4f}")
 
     # Flag high-usage solutions
-    print(f"\n{'=' * 80}")
-    print("  HIGH USAGE SOLUTIONS (> 20% of total)")
-    print(f"{'=' * 80}")
+    _print(f"\n{'=' * 80}")
+    _print("  HIGH USAGE SOLUTIONS (> 20% of total)")
+    _print(f"{'=' * 80}")
     threshold = grand_total * 0.20 if grand_total > 0 else float("inf")
     flagged = False
     for r in sorted(results, key=lambda x: x.total_tokens, reverse=True):
@@ -425,23 +456,23 @@ def print_report(results: list[SolutionUsage], output_json: bool = False):
         pct = (r.total_tokens / grand_total * 100) if grand_total > 0 else 0
         if r.total_tokens >= threshold:
             flagged = True
-            print(f"  ⚠  {r.name:<40} {r.total_tokens:>8,} tokens ({pct:.1f}%)")
+            _print(f"  ⚠  {r.name:<40} {r.total_tokens:>8,} tokens ({pct:.1f}%)")
             for c in sorted(r.calls, key=lambda x: x.total_tokens, reverse=True)[:3]:
-                print(f"       └─ {c.endpoint} ({c.model}): {c.total_tokens:,} tokens")
+                _print(f"       └─ {c.endpoint} ({c.model}): {c.total_tokens:,} tokens")
 
     if not flagged:
-        print("  None — token usage is well distributed across solutions.")
+        _print("  None — token usage is well distributed across solutions.")
 
     # Workshop planning
-    print(f"\n{'=' * 80}")
-    print("  WORKSHOP PLANNING")
-    print(f"{'=' * 80}")
+    _print(f"\n{'=' * 80}")
+    _print("  WORKSHOP PLANNING")
+    _print(f"{'=' * 80}")
     for num_participants in [10, 25, 50, 100]:
-        print(f"\n  {num_participants} participants ({grand_total * num_participants:,} tokens):")
+        _print(f"\n  {num_participants} participants ({grand_total * num_participants:,} tokens):")
         for model_name, cost in costs.items():
-            print(f"    {model_name:<26} ${cost * num_participants:>8.2f}")
+            _print(f"    {model_name:<26} ${cost * num_participants:>8.2f}")
 
-    print()
+    _print()
 
 
 # ---------------------------------------------------------------------------
@@ -531,26 +562,17 @@ def main():
         usage = run_solution(script_name, description, solutions_dir, log_dir=log_dir)
         results.append(usage)
 
-    # Print report to stdout (and optionally to a log file).
-    if log_dir and not args.json:
+    # Write report to stdout.  When --log is active, also write a copy
+    # to the log directory (report.txt for text, report.json for JSON).
+    if log_dir:
         report_buf = io.StringIO()
-        saved_stdout = sys.stdout
-        sys.stdout = _TeeWriter(saved_stdout, report_buf)
-        print_report(results, output_json=False)
-        sys.stdout = saved_stdout
-        (log_dir / "report.txt").write_text(report_buf.getvalue())
+        output_stream = _TeeWriter(sys.stdout, report_buf)
+        ext = "json" if args.json else "txt"
+        print_report(results, output_json=args.json, file=output_stream)
+        (log_dir / f"report.{ext}").write_text(report_buf.getvalue())
         print(f"\nReport and logs written to: {log_dir}/", file=sys.stderr)
     else:
         print_report(results, output_json=args.json)
-        if log_dir:
-            # JSON mode: also write report.json to log dir
-            json_buf = io.StringIO()
-            saved_stdout = sys.stdout
-            sys.stdout = json_buf
-            print_report(results, output_json=True)
-            sys.stdout = saved_stdout
-            (log_dir / "report.json").write_text(json_buf.getvalue())
-            print(f"\nLogs written to: {log_dir}/", file=sys.stderr)
 
 
 if __name__ == "__main__":
