@@ -54,6 +54,7 @@ MANIFEST
 
 # Logs
 *.log
+logs/
 
 # Azure Developer CLI (azd)
 .azure/
