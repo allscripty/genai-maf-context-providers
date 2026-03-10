@@ -48,7 +48,7 @@ async def main():
         # end::agent[]
 
         # tag::run[]
-        query = "Find movies about space exploration"
+        query = "Christopher Nolan Batman"
         print(f"User: {query}\n")
         print("Answer: ", end="", flush=True)
         response = await agent.run(query, session=session)
