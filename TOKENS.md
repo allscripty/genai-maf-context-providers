@@ -70,27 +70,37 @@ To set a max budget cap, assume worst-case usage: 500 participants each running 
 
 **Recommended budget cap: $100** using the default GPT-5 Mini model. This provides ~65% headroom over the $60 estimate and covers edge cases like retries, debugging, or participants running solutions more than 10 times. If using GPT-4o, set the cap to **$300**.
 
+## Azure AI Foundry
+
+For Azure-specific token usage, capacity planning, and cost estimates, see [AZURE_TOKENS.md](AZURE_TOKENS.md).
+
 ## Running the Token Usage Report
 
-Prerequisites: a `.env` file with valid `NEO4J_URI`, `NEO4J_USERNAME`, `NEO4J_PASSWORD`, and `OPENAI_API_KEY`, plus the `.venv` virtual environment.
+Prerequisites: a `.env` file with valid Neo4j credentials, LLM credentials (OpenAI or Azure), plus the `.venv` virtual environment.
 
 ```bash
-# Human-readable report (uses current OPENAI_RESPONSES_MODEL_ID from .env)
+# Human-readable report (uses current provider/model from .env)
 ./admin_setup/run_all.sh --tokens
 
-# Override model for a specific run
+# Override model for a specific run (OpenAI)
 ./admin_setup/run_all.sh --tokens --model gpt-5-nano
 ./admin_setup/run_all.sh --tokens --model gpt-5-mini
 ./admin_setup/run_all.sh --tokens --model gpt-4o
 
+# Run against Azure AI Foundry
+./admin_setup/run_all.sh --tokens --provider azure --model gpt-5-mini
+./admin_setup/run_all.sh --tokens --provider azure --model gpt-5-nano
+
 # JSON output (for programmatic use)
 ./admin_setup/run_all.sh --tokens --json
-./admin_setup/run_all.sh --tokens --model gpt-5-nano --json
+./admin_setup/run_all.sh --tokens --provider azure --model gpt-5-mini --json
 
 # Direct Python invocation
 .venv/bin/python admin_setup/token_usage_report.py --model gpt-5-nano
-.venv/bin/python admin_setup/token_usage_report.py --model gpt-5-mini --json
+.venv/bin/python admin_setup/token_usage_report.py --provider azure --model gpt-5-mini --json
 ```
+
+The `--provider` flag overrides `LLM_PROVIDER` and sets the correct model environment variable (`OPENAI_RESPONSES_MODEL_ID` for OpenAI, `AZURE_OPENAI_RESPONSES_DEPLOYMENT_NAME` for Azure).
 
 The report hooks into the Microsoft Agent Framework's `ChatResponse.usage_details` API and the OpenAI Embeddings API to capture token usage from every LLM and embedding call. Solution output goes to stderr; the report goes to stdout.
 
@@ -99,6 +109,8 @@ The report hooks into the Microsoft Agent Framework's `ChatResponse.usage_detail
 All pricing as of March 2026:
 
 - [OpenAI API Pricing](https://openai.com/api/pricing/)
+- [Azure OpenAI Pricing](https://azure.microsoft.com/pricing/details/cognitive-services/openai-service/)
 - [GPT-5 Nano Model](https://platform.openai.com/docs/models/gpt-5-nano) — $0.05 / $0.40 per 1M tokens (input/output)
 - [GPT-5 Mini Model](https://platform.openai.com/docs/models/gpt-5-mini) — $0.25 / $2.00 per 1M tokens (input/output)
-- Embedding model: `text-embedding-3-small` — $0.02 per 1M tokens
+- Embedding: `text-embedding-3-small` (OpenAI) — $0.02 per 1M tokens
+- Embedding: `text-embedding-ada-002` (Azure) — $0.10 per 1M tokens
