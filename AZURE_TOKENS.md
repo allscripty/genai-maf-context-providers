@@ -133,16 +133,16 @@ These are consistent with the OpenAI direct results in [TOKENS.md](TOKENS.md).
 
 ```bash
 # Human-readable report
-./admin_setup/run_all.sh --tokens --provider azure --model gpt-5-mini
+./admin_setup/run_all.sh --tokens
 
 # JSON output
-./admin_setup/run_all.sh --tokens --provider azure --model gpt-5-mini --json
+./admin_setup/run_all.sh --tokens --json
 
 # Direct Python invocation
-.venv/bin/python admin_setup/token_usage_report.py --provider azure --model gpt-5-mini
+.venv/bin/python admin_setup/token_usage_report.py
 ```
 
-Requires `.env` with valid `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_ENDPOINT`, Neo4j credentials, and the `.venv` virtual environment.
+Requires `.env` with `LLM_PROVIDER=azure`, valid `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_RESPONSES_DEPLOYMENT_NAME`, Neo4j credentials, and the `.venv` virtual environment.
 
 ## Pricing Sources
 

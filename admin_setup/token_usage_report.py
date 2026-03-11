@@ -10,11 +10,8 @@ Supports both OpenAI direct and Azure AI Foundry providers.
 
 Usage:
     python admin_setup/token_usage_report.py
-    python admin_setup/token_usage_report.py --model gpt-5-nano
-    python admin_setup/token_usage_report.py --model gpt-5-mini --json
-    python admin_setup/token_usage_report.py --model gpt-5-mini --log logs/mini-run
-    python admin_setup/token_usage_report.py --provider azure --model gpt-5-mini
-    python admin_setup/token_usage_report.py --provider azure --model gpt-5-nano --json
+    python admin_setup/token_usage_report.py --json
+    python admin_setup/token_usage_report.py --log logs/mini-run
 """
 
 import importlib
@@ -480,15 +477,6 @@ def main():
     parser = argparse.ArgumentParser(description="Workshop token usage report")
     parser.add_argument("--json", action="store_true", help="JSON output")
     parser.add_argument(
-        "--model",
-        help="Override model/deployment name (e.g. gpt-5-nano, gpt-5-mini)",
-    )
-    parser.add_argument(
-        "--provider",
-        choices=["openai", "azure"],
-        help="Override LLM_PROVIDER (openai or azure)",
-    )
-    parser.add_argument(
         "--log",
         metavar="DIR",
         help="Write per-solution logs and report to DIR",
@@ -503,42 +491,6 @@ def main():
 
     from dotenv import load_dotenv
     load_dotenv(override=True)
-
-    # Determine provider and model overrides.
-    provider_override = args.provider
-    model_override = args.model
-
-    # Build dict of env vars to preserve through solution dotenv reloads.
-    env_overrides = {}
-
-    if provider_override:
-        os.environ["LLM_PROVIDER"] = provider_override
-        env_overrides["LLM_PROVIDER"] = provider_override
-
-    provider = os.environ.get("LLM_PROVIDER", "openai").lower()
-
-    if model_override:
-        if provider == "azure":
-            os.environ["AZURE_OPENAI_RESPONSES_DEPLOYMENT_NAME"] = model_override
-            env_overrides["AZURE_OPENAI_RESPONSES_DEPLOYMENT_NAME"] = model_override
-        else:
-            os.environ["OPENAI_RESPONSES_MODEL_ID"] = model_override
-            env_overrides["OPENAI_RESPONSES_MODEL_ID"] = model_override
-
-    if env_overrides:
-        display_model = model_override or _get_report_model()
-        print(f"Using provider: {provider}, model: {display_model}", file=sys.stderr)
-
-        import dotenv
-        _original_load_dotenv = dotenv.load_dotenv
-
-        def _load_dotenv_preserving_overrides(*a, **kw):
-            result = _original_load_dotenv(*a, **kw)
-            for key, value in env_overrides.items():
-                os.environ[key] = value
-            return result
-
-        dotenv.load_dotenv = _load_dotenv_preserving_overrides
 
     # Set up log directory if requested.
     log_dir = None

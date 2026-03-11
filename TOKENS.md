@@ -95,34 +95,21 @@ For Azure-specific token usage, capacity planning, and cost estimates, see [AZUR
 Prerequisites: a `.env` file with valid Neo4j credentials, LLM credentials (OpenAI or Azure), plus the `.venv` virtual environment.
 
 ```bash
-# Human-readable report (uses current provider/model from .env)
+# Human-readable report (uses provider and model from .env)
 ./admin_setup/run_all.sh --tokens
-
-# Override model for a specific run (OpenAI)
-./admin_setup/run_all.sh --tokens --model gpt-5-nano
-./admin_setup/run_all.sh --tokens --model gpt-5-mini
-./admin_setup/run_all.sh --tokens --model gpt-4o
-
-# Run against Azure AI Foundry
-./admin_setup/run_all.sh --tokens --provider azure --model gpt-5-mini
-./admin_setup/run_all.sh --tokens --provider azure --model gpt-5-nano
 
 # JSON output (for programmatic use)
 ./admin_setup/run_all.sh --tokens --json
-./admin_setup/run_all.sh --tokens --provider azure --model gpt-5-mini --json
 
 # Log detailed solution output to files for review
-./admin_setup/run_all.sh --tokens --model gpt-5-mini --log logs/mini-run
-./admin_setup/run_all.sh --tokens --model gpt-4o --log logs/4o-run
+./admin_setup/run_all.sh --tokens --log logs/run
 
 # Direct Python invocation
-.venv/bin/python admin_setup/token_usage_report.py --model gpt-5-nano
-.venv/bin/python admin_setup/token_usage_report.py --provider azure --model gpt-5-mini --json
+.venv/bin/python admin_setup/token_usage_report.py
+.venv/bin/python admin_setup/token_usage_report.py --json
 ```
 
-The `--provider` flag overrides `LLM_PROVIDER` and sets the correct model environment variable (`OPENAI_RESPONSES_MODEL_ID` for OpenAI, `AZURE_OPENAI_RESPONSES_DEPLOYMENT_NAME` for Azure).
-
-The `--log <dir>` flag writes each solution's detailed output to a separate log file (e.g., `simple_agent.log`, `memory_tools_agent.log`) and saves the full report as `report.txt`. This is useful for comparing runs across models or investigating token count differences.
+The `--log <dir>` flag writes each solution's detailed output to a separate log file (e.g., `simple_agent.log`, `memory_tools_agent.log`) and saves the full report as `report.txt`. This is useful for comparing runs or investigating token count differences.
 
 The report hooks into the Microsoft Agent Framework's `ChatResponse.usage_details` API and the OpenAI Embeddings API to capture token usage from every LLM and embedding call. Solution output goes to stderr; the report goes to stdout.
 

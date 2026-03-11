@@ -12,7 +12,7 @@ if [ ! -f "$PYTHON" ]; then
   exit 1
 fi
 
-# Token usage report mode: run_all.sh --tokens [--model MODEL] [--provider openai|azure] [--json]
+# Token usage report mode: run_all.sh --tokens [--json]
 if [[ "${1:-}" == "--tokens" ]]; then
   echo "Running token usage report..."
   shift
