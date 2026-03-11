@@ -1,6 +1,6 @@
 # Azure AI Foundry Token Usage Report
 
-Token usage measured against a live Azure AI Services deployment using `gpt-5-mini` (GlobalStandard, capacity 120) with the Responses API (`api-version=2025-03-01-preview`).
+Token usage measured against a live Azure AI Services deployment using `gpt-5-mini` (GlobalStandard, capacity 1000) with the Responses API (`api-version=2025-03-01-preview`).
 
 ## Per-Solution Breakdown (Azure GPT-5 Mini)
 
@@ -68,36 +68,52 @@ The Azure infrastructure itself (AI Services S0 account) has no standing cost �
 
 ## Capacity Planning for 100 Participants
 
-### GlobalStandard Deployment (capacity=120)
+### GlobalStandard Deployment (capacity=1000)
 
-The Bicep template deploys with `capacity=120` which maps to approximately:
+The Bicep template deploys with `capacity=1000` which maps to:
 
-- **120,000 TPM** (tokens per minute) per model deployment
-- **720 RPM** (requests per minute) per model deployment
+- **1,000,000 TPM** (tokens per minute) per model deployment
+- **6,000 RPM** (requests per minute) per model deployment
 
-### Will 120 Capacity Handle 100 Participants?
+The deployment was updated from `capacity=120` to `capacity=1000` to eliminate any risk of 429 rate-limit errors during peak workshop activity. Since Azure only charges for tokens consumed (not provisioned capacity), this increase has no cost impact under normal usage.
 
-**Yes, comfortably.** Here's why:
+### Will 1000 Capacity Handle 100 Participants?
+
+**Yes, with massive headroom.** Here's why:
 
 - Total tokens per participant: ~38,000 (conservative upper bound across multiple runs)
 - At 100 participants running all 11 solutions: ~3.8M tokens total
 - Workshop duration: ~2 hours (participants work through labs at different paces)
-- Average token rate: ~3.8M / 120 min = ~31,667 TPM — well under the 120K TPM limit
-- Peak concurrent requests: even if 20 participants hit the API simultaneously, that's 20 RPM — well under 720 RPM
+- Average token rate: ~3.8M / 120 min = ~31,667 TPM — well under the 1M TPM limit
+- Peak concurrent requests: even if 50 participants hit the API simultaneously, that's 50 RPM — well under 6,000 RPM
 
-**Burst handling:** Azure enforces rate limits in 1-second and 10-second windows. With 720 RPM, you can sustain 12 requests/second. Even during peak moments (e.g., all participants starting a lab at once), this provides ample headroom.
+**Burst handling:** Azure enforces rate limits in 1-second and 10-second windows. With 6,000 RPM, you can sustain 100 requests/second. Even during peak moments (e.g., all participants starting a lab at once), this provides ample headroom.
 
-### Scaling Up
+### Worst-Case Cost: Sustained Maximum Throughput
 
-If you expect >100 participants or want to reduce any risk of 429 errors during peak bursts:
+If participants saturated the full 1M TPM capacity for the entire 2-hour workshop:
+
+- **Total tokens:** 1,000,000 TPM × 120 min = **120,000,000 tokens**
+- Using the measured input/output ratio (~67% input, ~33% output):
+
+| | Tokens | Rate (GPT-5 Mini Global) | Cost |
+|---|---:|---:|---:|
+| Input | ~80.9M | $0.25/1M | $20.23 |
+| Output | ~39.1M | $2.00/1M | $78.23 |
+| **Total** | **120M** | | **~$98.46** |
+
+This worst case is extremely unlikely — it would require ~2,600+ concurrent participants running non-stop. The $500 budget alert in the Bicep template provides a safety net regardless.
+
+### Scaling Down
+
+If you want tighter rate-limit guardrails, reduce `chatDeploymentCapacity` in `infra/main.bicep`:
 
 | Capacity | TPM | RPM | Max Concurrent Participants |
 |---:|---:|---:|---:|
 | 120 | 120,000 | 720 | 100+ |
 | 240 | 240,000 | 1,440 | 200+ |
 | 500 | 500,000 | 3,000 | 500+ |
-
-Increase the `chatDeploymentCapacity` param in `infra/main.bicep`.
+| 1000 | 1,000,000 | 6,000 | 2,600+ |
 
 ### Quota Tiers
 
@@ -110,7 +126,7 @@ Azure uses tiered quotas for GlobalStandard deployments. New subscriptions start
 | 1 | 1,000 | 1,000,000 |
 | 2 | 2,000 | 2,000,000 |
 
-Even Tier 1 limits far exceed workshop needs. The `capacity=120` parameter sets the deployment-level limit within these subscription-level quotas.
+The `capacity=1000` deployment uses the full Tier 1 allocation. No tier upgrade is required.
 
 ## API Version Requirement
 

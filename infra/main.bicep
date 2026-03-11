@@ -9,6 +9,9 @@ param environmentName string
 @description('Location for all resources')
 param location string = resourceGroup().location
 
+@description('Email address for budget alert notifications')
+param budgetAlertEmail string
+
 // Chat completion model
 @description('Name of the chat model to deploy')
 param chatModelName string = 'gpt-5-mini'
@@ -17,7 +20,7 @@ param chatModelVersion string = '2025-08-07'
 @description('SKU for the chat deployment')
 param chatDeploymentSku string = 'GlobalStandard'
 @description('Capacity for the chat deployment (TPM in thousands)')
-param chatDeploymentCapacity int = 120
+param chatDeploymentCapacity int = 1000
 
 // Embedding model - must match pre-computed embeddings in movie_embeddings.csv
 @description('Name of the embedding model to deploy')
@@ -27,7 +30,7 @@ param embeddingModelVersion string = '1'
 @description('SKU for the embedding deployment')
 param embeddingDeploymentSku string = 'GlobalStandard'
 @description('Capacity for the embedding deployment')
-param embeddingDeploymentCapacity int = 120
+param embeddingDeploymentCapacity int = 60
 
 var tags = { 'azd-env-name': environmentName }
 var resourceToken = toLower(uniqueString(resourceGroup().id, environmentName))
@@ -79,6 +82,43 @@ resource embeddingDeployment 'Microsoft.CognitiveServices/accounts/deployments@2
   sku: {
     name: embeddingDeploymentSku
     capacity: embeddingDeploymentCapacity
+  }
+}
+
+// Budget alert - warns at 80% and 100% of $500 spend
+resource budget 'Microsoft.Consumption/budgets@2023-11-01' = {
+  name: 'workshop-budget-${resourceToken}'
+  properties: {
+    category: 'Cost'
+    amount: 500
+    timeGrain: 'Monthly'
+    timePeriod: {
+      startDate: '2026-03-01'
+      endDate: '2026-04-01'
+    }
+    filter: {
+      dimensions: {
+        name: 'ResourceGroupName'
+        operator: 'In'
+        values: [resourceGroup().name]
+      }
+    }
+    notifications: {
+      actual80Percent: {
+        enabled: true
+        operator: 'GreaterThan'
+        threshold: 80
+        contactEmails: [budgetAlertEmail]
+        thresholdType: 'Actual'
+      }
+      actual100Percent: {
+        enabled: true
+        operator: 'GreaterThan'
+        threshold: 100
+        contactEmails: [budgetAlertEmail]
+        thresholdType: 'Actual'
+      }
+    }
   }
 }
 
